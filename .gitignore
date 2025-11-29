@@ -1,0 +1,279 @@
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Visual Studio
+.vs/
+.vsconfig
+
+# Build results
+bin/
+obj/
+out/
+build/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+.packages/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# IDE and Editor
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Rider
+.idea/
+*.sln.iml
+riderModule.iml
+
+# C# specific
+*.csproj.user
+*.csproj.bak
+*.csproj.tmp
+
+# ReSharper
+_ReSharper*/
+*.resharper
+*.resharper.user
+.resharper.user.xml
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Blazor specific
+wwwroot/lib/
+obj/Debug/net*/
+obj/Release/net*/
+
+# Entity Framework Core
+Migrations/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Application database
+*.db
+*.db-shm
+*.db-wal
+*.mdf
+*.ldf
+*.ndf
+
+# LocalDB instance files
+*.ldf
+*.mdf
+
+# Testing
+TestResults/
+.trx
+
+# Coverage reports
+OpenCover/
+coverage/
+*.coverage
+*.coveragexml
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+~*
+.#*
+
+# OS-specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Node modules (if using npm/yarn for Blazor)
+node_modules/
+dist/
+
+# Yarn
+yarn.lock
+
+# Npm
+package-lock.json
+
+# MSBuild binary and structured log files
+*.binlog
+*.slndata
+
+# Solution backup files
+*.bak
+
+# SQL Server
+SqlServerData/
+
+# Runtime config files
+app.config
+web.config
+appsettings.Production.json
+
+# Sensitive data
+appsettings.Production.json
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+# Visual Studio cache/options
+.vs/
+.vscode/settings.json
+
+# Publish folder
+PublishProfiles/
+publish/
+PublishOutput/
+
+# IIS publish folder
+iisExpress/
+
+# BizTalk specific
+*.btp.cs
+*.btproj.cs
+*.odx.cs
+*.xsd.cs
+
+# OpenCover UI reports
+OpenCoverUI/
+
+# Nuget restore
+.nuget/
+
+# Cache files
+.cache/
+temp/
+
+# User-defined
+.mypy_cache/
+.pytest_cache/
+__pycache__/
+
+# dotnet watch
+.hotreload/
+
+# Rider auto-format
+.idea/runConfigurations/
+
+# Plugin folder
+Plugins/
+
+# Mac bundle file
+*.bundle
+
+# Azure Cosmos DB Emulator
+CosmosDBEmulator/
+
+# Debug files
+*.pdb
+
+# ClickOnce
+publish/
+
+# Signing
+SigningCertificates/
+
+# Generated files
+Generated/
+generated/
+
+# Built files
+dist/
+build/
+
+# Runtime
+runtime/
+
+# Unwanted IDE files
+.vscode/extensions.json
+.editorconfig
+
+# macOS
+.AppleDouble
+.LSOverride
+
+# Windows
+desktop.ini
+
+# Linux
+.directory
+
+# Project Rider
+.idea/
+
+# Visual Studio Code workspace settings
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# dotnet user files
+.dotnet/
+
+# Blazor WebAssembly
+wwwroot/css/bootstrap/
+wwwroot/css/bootstrap.min.css
+wwwroot/css/bootstrap.min.css.map
+wwwroot/js/bootstrap/
+wwwroot/js/bootstrap.bundle.min.js
+wwwroot/js/bootstrap.bundle.min.js.map
+
+# Client-side dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Output folders
+output/
+outputs/
+dist/
+release/
+
+# Backup files
+*.bk
+*.backup
+
+# Config files that should be private
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+# Connection strings file
+connectionstrings.json
+
+# Certificates
+*.pfx
+*.cer
+*.crt
+*.pem
+
+# User preferences
+.vscode/
+
+# Environment specific
+.env
+.env.local
+.env.*.local
+
