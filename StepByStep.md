@@ -179,6 +179,49 @@ Components/
 
 ---
 
+### **Phase 2.5: LLM Query Interface** (Optional - Between Phases 2 & 3)
+
+#### Step 2.5.1: Create Natural Language Query Service
+Create `Services/` folder (if not already created):
+```
+Services/
+├── ICardQueryService.cs (interface)
+└── CardQueryService.cs (implementation)
+```
+
+**ICardQueryService Interface Methods**:
+- `Task<List<Card>> SearchByNaturalLanguageAsync(string userQuestion)` - Process LLM questions
+- `Task<Card?> FindCardByDescriptionAsync(string description)` - Fuzzy card matching
+- `Task<List<Card>> FilterByAttributesAsync(Dictionary<string, object> filters)` - Dynamic filtering
+
+#### Step 2.5.2: Implement LLM Integration
+- Convert natural language questions to structured queries
+- Use LLM (Claude, GPT, etc.) to understand user intent
+- Build LINQ queries dynamically from parsed intent
+- Format database results for user-friendly responses
+
+**Example Questions the System Should Handle**:
+- "Show me all holographic Charizards"
+- "What's the most expensive card in my collection?"
+- "Find all cards from the Jungle set worth less than $100"
+- "Which trainers support water Pokémon?"
+- "What fire-type rare cards do I own?"
+
+#### Step 2.5.3: Query Optimization for LLM
+- Index card names for faster text search
+- Use `.AsNoTracking()` for read-only LLM queries
+- Implement caching for common search patterns
+- Add result limit parameters (top 10, top 50, etc.)
+
+**Why NOT RAG for This Project**:
+- Your database is structured (perfect for SQL)
+- No need for vector embeddings
+- Direct database queries = 100% accuracy, no hallucinations
+- Faster performance than embedding-based retrieval
+- No external API costs or latency
+
+---
+
 ### **Phase 7: Database Queries & Optimization** (Week 7)
 
 #### Step 7.1: Optimize Query Performance
@@ -187,11 +230,12 @@ Components/
 - Add database indexes on searchable columns (Name, CardNumber)
 - Use `Select()` to project only needed fields
 
-#### Step 7.2: Implement Search Features
-- Full-text search on card names
+#### Step 7.2: Implement Advanced Search Features
+- Full-text search on card names (SQLite FTS5)
 - Partial card number matching
 - Case-insensitive searches
 - Combined filters (type + rarity + condition)
+- Natural language search results from Phase 2.5
 
 ---
 
@@ -256,13 +300,27 @@ Tests/
 Presentation Layer (Blazor Components)
            ↓
 Application Layer (Services)
+  ├── Card Collection Service
+  ├── Card Query Service (LLM Integration - Phase 2.5)
+  └── External API Service
            ↓
 Domain Layer (Models & Interfaces)
            ↓
 Infrastructure Layer (Repository, DbContext, API Client)
            ↓
-External API & Database
+Data Layer (SQLite Database - Structured)
+           ↓
+External Systems:
+  ├── Pokémon Card API (Phase 3)
+  └── LLM Service (Claude, GPT, etc. - Phase 2.5 Optional)
 ```
+
+**Key Design Decision - Why Not RAG?**
+- SQLite stores structured card data (perfect for direct queries)
+- LLM queries natural language → translates to SQL filters
+- Results from database are 100% accurate (ground truth)
+- No need for vector embeddings or document retrieval
+- Faster, cheaper, and more reliable than RAG architecture
 
 ---
 
