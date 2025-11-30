@@ -1,8 +1,4 @@
-## 📋 Pokémon Card Collector - Development Plan
-
-### **Phase 1: Project Setup & Infrastructure** (Weeks 1-2)
-
-#### Step 1.1: Configure Database & Entity Framework Core
+## 📋 Pokémon Card Collector - Development Plan\n\n### **Phase 1: Project Setup & Infrastructure** (Weeks 1-2)\n\n#### Step 1.1: Configure Database & Entity Framework Core
 - **Action**: Install Entity Framework Core NuGet packages
   - `Microsoft.EntityFrameworkCore`
   - `Microsoft.EntityFrameworkCore.SqlServer` (or SQLite for development)

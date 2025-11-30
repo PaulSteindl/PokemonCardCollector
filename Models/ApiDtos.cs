@@ -1,6 +1,33 @@
 namespace PokemonCardCollector.Models;
 
 /// <summary>
+/// DTO for a brief card response from TCGdex v2 API search results.
+/// Contains minimal card information for listing operations.
+/// </summary>
+public class CardBriefApiDto
+{
+    /// <summary>
+    /// Gets or sets the unique API identifier (e.g., "swsh3-136").
+    /// </summary>
+    public required string Id { get; set; }
+
+    /// <summary>
+    /// Gets or sets the card number within its set.
+    /// </summary>
+    public required string LocalId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the official card name.
+    /// </summary>
+    public required string Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the URL to the card image.
+    /// </summary>
+    public required string Image { get; set; }
+}
+
+/// <summary>
 /// DTO for a card response from the TCGdex API.
 /// </summary>
 public class PokemonCardApiDto
@@ -165,6 +192,27 @@ public class CardSetApiDto
     /// Gets or sets the set symbol URL.
     /// </summary>
     public string? Symbol { get; set; }
+
+    /// <summary>
+    /// Gets or sets the card count information for the set.
+    /// </summary>
+    public CardCountApiDto? CardCount { get; set; }
+}
+
+/// <summary>
+/// DTO for card count information in set responses.
+/// </summary>
+public class CardCountApiDto
+{
+    /// <summary>
+    /// Gets or sets the total number of cards in the set.
+    /// </summary>
+    public int Total { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of officially released cards in the set.
+    /// </summary>
+    public int Official { get; set; }
 }
 
 /// <summary>
@@ -191,6 +239,11 @@ public class CardVariantsApiDto
     /// Gets or sets a value indicating whether the first edition variant is available.
     /// </summary>
     public bool FirstEdition { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the WPromo variant is available (v2 API).
+    /// </summary>
+    public bool WPromo { get; set; }
 }
 
 /// <summary>
