@@ -1,0 +1,72 @@
+@namespace PokemonCardCollector.Components.Shared
+@rendermode InteractiveServer
+
+<div class="search-container">
+    <div class="input-group mb-3">
+        <input 
+            type="text"
+            class="form-control"
+            placeholder="@Placeholder"
+            value="@SearchText"
+            @onchange="HandleInputChange"
+            @onkeyup="HandleKeyPress"
+            aria-label="@Placeholder" />
+        <button 
+            class="btn btn-primary"
+            type="button"
+            @onclick="OnSearch"
+            disabled="@IsSearching">
+            @if (IsSearching)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                <span>Searching...</span>
+            }
+            else
+            {
+                <span class="bi bi-search me-1"></span>
+                <span>Search</span>
+            }
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Placeholder { get; set; } = "Search cards...";
+
+    [Parameter]
+    public EventCallback<string> OnSearchRequested { get; set; }
+
+    [Parameter]
+    public bool IsSearching { get; set; } = false;
+
+    private string SearchText { get; set; } = string.Empty;
+
+    private void HandleInputChange(ChangeEventArgs e)
+    {
+        SearchText = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private async Task OnSearch()
+    {
+        if (string.IsNullOrWhiteSpace(SearchText))
+        {
+            return;
+        }
+
+        await OnSearchRequested.InvokeAsync(SearchText);
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await OnSearch();
+        }
+    }
+
+    public void ClearSearch()
+    {
+        SearchText = string.Empty;
+    }
+}

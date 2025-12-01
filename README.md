@@ -22,6 +22,7 @@ A comprehensive .NET application for collecting, searching, and managing Pokémo
 | **Entity Framework Core** | 9.0 | ORM and data access |
 | **SQLite** | 3.x | Local relational database |
 | **TCGdex API** | v2 | Pokémon card data source (https://api.tcgdex.net/v2/en) |
+| **System.Text.Json** | .NET 9 | JSON serialization with custom converters |
 | **Serilog** | Latest | Structured logging |
 
 ## Project Architecture
@@ -145,13 +146,17 @@ PokemonCardCollector/
 │   ├── PokemonCard.cs      # Card entity and derived types
 │   ├── ApiDtos.cs          # API response DTOs
 │   ├── Enums.cs            # Enumeration types
-│   └── PokemonCardDbContext.cs  # EF Core context
+│   ├── PokemonCardDbContext.cs  # EF Core context
+│   └── JsonConverters/     # Custom JSON converters
+│       └── DamageJsonConverter.cs  # Handles numeric/string damage
 ├── Repositories/           # Data access layer (Phase 2)
 │   ├── ICardRepository.cs  # Data access interface
 │   └── CardRepository.cs   # Repository implementation
 ├── Services/               # Business & API services (Phase 3+)
 │   ├── IPokemonCardApiService.cs  # API service interface
 │   ├── PokemonCardApiService.cs   # TCGdex v2 integration
+│   ├── IImageUrlService.cs        # Image URL formatting interface
+│   ├── ImageUrlService.cs         # TCGdex asset URL formatter
 │   └── [Phase 4 Services]         # Business logic (coming)
 ├── Migrations/             # EF Core database migrations
 ├── wwwroot/                # Static assets (CSS, JavaScript)
@@ -174,6 +179,8 @@ report/                     # Development documentation
 - ✅ **Async Operations**: All I/O operations are non-blocking
 - ✅ **Repository Pattern**: Clean abstraction over Entity Framework Core
 - ✅ **TCGdex v2 API Integration**: Real-time card data with v2 endpoints
+- ✅ **Custom JSON Converters**: Handles polymorphic API responses (numeric/string damage)
+- ✅ **Image URL Formatting**: Proper TCGdex asset URL construction with quality/extension
 - ✅ **Error Handling**: Comprehensive exception handling with structured logging
 - ✅ **Input Validation**: Validates all inputs before processing
 - ✅ **Pagination**: Efficient data loading for large datasets
@@ -382,7 +389,7 @@ This project is open source and available under the Apache License. See [LICENSE
 
 ---
 
-**Current Status**: Phase 3 Complete ✅ | Compilation: Success ✅ | Ready for Phase 4 ✅
+**Current Status**: Phase 5 Complete ✅ | Compilation: Success ✅ | Production Ready ✅
 
-*Last Updated: November 30, 2025*
+*Last Updated: December 1, 2025*
 

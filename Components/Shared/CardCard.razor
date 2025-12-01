@@ -1,0 +1,201 @@
+@namespace PokemonCardCollector.Components.Shared
+@rendermode InteractiveServer
+@using PokemonCardCollector.Models
+@using PokemonCardCollector.Services
+@inject IImageUrlService ImageUrlService
+
+<div class="card card-item mb-3">
+    <div class="card-header bg-light d-flex justify-content-between align-items-start">
+        <div>
+            <h5 class="card-title mb-1">@Card.Name</h5>
+            <small class="text-muted">
+                @Card.SetName (@Card.LocalId)
+            </small>
+        </div>
+        <span class="badge bg-primary">@Card.Rarity</span>
+    </div>
+    
+    <div class="card-body">
+        @if (!string.IsNullOrWhiteSpace(Card.ImageUrl))
+        {
+            <div class="text-center mb-3">
+                <img 
+                    src="@ImageUrlService.FormatCardImageUrl(Card.ImageUrl, "low", "webp")" 
+                    alt="@Card.Name" 
+                    class="card-image img-fluid rounded"
+                    style="max-height: 250px; width: auto;" />
+            </div>
+        }
+        
+        <div class="card-details">
+            @if (!string.IsNullOrWhiteSpace(Card.Illustrator))
+            {
+                <p class="mb-2">
+                    <strong>Illustrator:</strong> @Card.Illustrator
+                </p>
+            }
+            
+            @if (Card is PokemonCard pokemonCard && !string.IsNullOrWhiteSpace(pokemonCard.Types))
+            {
+                <p class="mb-2">
+                    <strong>Type:</strong> @pokemonCard.Types
+                </p>
+            }
+            
+            @if (!string.IsNullOrWhiteSpace(Card.Condition))
+            {
+                <p class="mb-2">
+                    <strong>Condition:</strong> 
+                    <span class="badge" style="@GetConditionBadgeColor(Card.Condition)">
+                        @Card.Condition
+                    </span>
+                </p>
+            }
+            
+            <div class="variants-section mb-2">
+                <strong>Variants Available:</strong>
+                <div class="variants-list">
+                    @if (Card.VariantNormal)
+                    {
+                        <span class="badge bg-secondary me-1">Normal</span>
+                    }
+                    @if (Card.VariantHolo)
+                    {
+                        <span class="badge bg-warning me-1">Holo</span>
+                    }
+                    @if (Card.VariantReverse)
+                    {
+                        <span class="badge bg-info me-1">Reverse Holo</span>
+                    }
+                    @if (Card.VariantFirstEdition)
+                    {
+                        <span class="badge bg-danger me-1">1st Edition</span>
+                    }
+                </div>
+            </div>
+            
+            @if (Card.TcgPlayerPrice.HasValue || Card.CardmarketPrice.HasValue)
+            {
+                <div class="price-section mb-2">
+                    <strong>Price:</strong>
+                    <ul class="list-unstyled ms-2">
+                        @if (Card.TcgPlayerPrice.HasValue)
+                        {
+                            <li>${Card.TcgPlayerPrice:F2} (TCGPlayer)</li>
+                        }
+                        @if (Card.CardmarketPrice.HasValue)
+                        {
+                            <li>€{Card.CardmarketPrice:F2} (Cardmarket)</li>
+                        }
+                    </ul>
+                </div>
+            }
+            
+            @if (!string.IsNullOrWhiteSpace(Card.UserNotes))
+            {
+                <p class="mb-2">
+                    <strong>Notes:</strong> <em>@Card.UserNotes</em>
+                </p>
+            }
+        </div>
+    </div>
+    
+    <div class="card-footer bg-light">
+        <div class="btn-group" role="group">
+            @if (ShowViewDetailsButton)
+            {
+                <button 
+                    type="button" 
+                    class="btn btn-sm btn-info"
+                    @onclick="() => OnViewDetails.InvokeAsync(Card.Id)">
+                    <span class="bi bi-eye me-1"></span>View Details
+                </button>
+            }
+            
+            @if (ShowEditButton)
+            {
+                <button 
+                    type="button" 
+                    class="btn btn-sm btn-warning"
+                    @onclick="() => OnEdit.InvokeAsync(Card.Id)">
+                    <span class="bi bi-pencil me-1"></span>Edit
+                </button>
+            }
+            
+            @if (ShowRemoveButton)
+            {
+                <button 
+                    type="button" 
+                    class="btn btn-sm btn-danger"
+                    @onclick="() => OnRemove.InvokeAsync(Card.Id)">
+                    <span class="bi bi-trash me-1"></span>Remove
+                </button>
+            }
+            
+            @if (ShowAddButton)
+            {
+                <button 
+                    type="button" 
+                    class="btn btn-sm btn-success"
+                    @onclick="() => OnAdd.InvokeAsync(Card.ApiId)"
+                    disabled="@IsAdding">
+                    @if (IsAdding)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>Adding...</span>
+                    }
+                    else
+                    {
+                        <span class="bi bi-plus-lg me-1"></span>
+                        <span>Add to Collection</span>
+                    }
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public required Card Card { get; set; }
+
+    [Parameter]
+    public bool ShowViewDetailsButton { get; set; } = false;
+
+    [Parameter]
+    public bool ShowEditButton { get; set; } = false;
+
+    [Parameter]
+    public bool ShowRemoveButton { get; set; } = false;
+
+    [Parameter]
+    public bool ShowAddButton { get; set; } = false;
+
+    [Parameter]
+    public bool IsAdding { get; set; } = false;
+
+    [Parameter]
+    public EventCallback<int> OnViewDetails { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnRemove { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnAdd { get; set; }
+
+    private string GetConditionBadgeColor(string condition)
+    {
+        return condition switch
+        {
+            "Mint" => "background-color: #28a745; color: white;",
+            "NearMint" => "background-color: #20c997; color: white;",
+            "LightlyPlayed" => "background-color: #ffc107; color: black;",
+            "Played" => "background-color: #fd7e14; color: white;",
+            "PoorCondition" => "background-color: #dc3545; color: white;",
+            _ => "background-color: #6c757d; color: white;"
+        };
+    }
+}

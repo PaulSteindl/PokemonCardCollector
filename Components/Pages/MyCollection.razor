@@ -1,0 +1,375 @@
+@page "/my-collection"
+@rendermode InteractiveServer
+@using PokemonCardCollector.Models
+@using PokemonCardCollector.Services
+@inject ICardCollectionService CardCollectionService
+@inject NavigationManager NavigationManager
+@inject ILogger<MyCollection> Logger
+
+<PageTitle>My Collection - Pokemon Card Collector</PageTitle>
+
+<PageHeader 
+    Title="My Collection"
+    Description="View and manage your Pokémon card collection." />
+
+<div class="collection-controls mb-4">
+    <div class="row g-3">
+        <div class="col-md-4">
+            <SearchBar 
+                Placeholder="Search collection..."
+                OnSearchRequested="SearchCollection"
+                IsSearching="@isLoading" />
+        </div>
+        
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="typeFilter" class="form-label">Filter by Type</label>
+                <select 
+                    id="typeFilter"
+                    class="form-select"
+                    @onchange="OnTypeFilterChanged"
+                    disabled="@isLoading">
+                    <option value="">All Types</option>
+                    <option value="PokemonCard">Pokémon</option>
+                    <option value="TrainerCard">Trainer</option>
+                    <option value="EnergyCard">Energy</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="pageSize" class="form-label">Cards Per Page</label>
+                <select 
+                    id="pageSize"
+                    class="form-select"
+                    @onchange="OnPageSizeChanged"
+                    disabled="@isLoading">
+                    <option value="10">10 cards</option>
+                    <option value="25">25 cards</option>
+                    <option value="50">50 cards</option>
+                    <option value="100">100 cards</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span class="bi bi-exclamation-circle me-2"></span>
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <span class="bi bi-check-circle me-2"></span>
+        @successMessage
+        <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+    </div>
+}
+
+<div class="collection-stats mb-4">
+    @if (stats != null)
+    {
+        <div class="row g-2">
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted">Total Cards</h6>
+                        <h3 class="mb-0">@stats.TotalCards</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted">Total Value</h6>
+                        <h3 class="mb-0">${stats.TotalValue:F2}</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted">Unique Sets</h6>
+                        <h3 class="mb-0">@stats.UniqueSets</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title text-muted">Rare Cards</h6>
+                        <h3 class="mb-0">@stats.RareCardCount</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="collection-items">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted">Loading your collection...</p>
+        </div>
+    }
+    else if (filteredCards != null && filteredCards.Count > 0)
+    {
+        <div class="results-header mb-3">
+            <h4>@filteredCards.Count card@(filteredCards.Count != 1 ? "s" : "") 
+                @if (!string.IsNullOrWhiteSpace(selectedFilter))
+                {
+                    <span class="text-muted">(filtered)</span>
+                }
+            </h4>
+        </div>
+        
+        @foreach (var card in filteredCards)
+        {
+            <CardCard 
+                Card="@card"
+                ShowViewDetailsButton="true"
+                ShowEditButton="true"
+                ShowRemoveButton="true"
+                OnViewDetails="ViewCardDetails"
+                OnEdit="EditCard"
+                OnRemove="RemoveCard" />
+        }
+
+        @if (hasMorePages)
+        {
+            <nav aria-label="Pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item" style="display: @(currentPage > 1 ? "block" : "none")">
+                        <button 
+                            class="page-link"
+                            @onclick="PreviousPage">
+                            Previous
+                        </button>
+                    </li>
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Page @currentPage
+                        </span>
+                    </li>
+                    <li class="page-item" style="display: @(hasMorePages ? "block" : "none")">
+                        <button 
+                            class="page-link"
+                            @onclick="NextPage">
+                            Next
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    else if (!isLoading)
+    {
+        <div class="alert alert-info text-center py-5">
+            <span class="bi bi-inbox me-2"></span>
+            <p class="mb-0">Your collection is empty. <a href="/card-search">Search and add cards</a> to get started!</p>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Card> filteredCards = new();
+    private List<Card> allCards = new();
+    private CollectionStatistics? stats;
+    private bool isLoading = true;
+    private bool hasMorePages = false;
+    private string? errorMessage;
+    private string? successMessage;
+    private string selectedFilter = string.Empty;
+    private string searchTerm = string.Empty;
+    private int currentPage = 1;
+    private int pageSize = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCollection();
+        await LoadStatistics();
+    }
+
+    private async Task LoadCollection()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            
+            var cardsEnumerable = await CardCollectionService.GetUserCollectionAsync(
+                selectedFilter,
+                currentPage,
+                pageSize);
+            
+            allCards = cardsEnumerable.ToList();
+            filteredCards = allCards;
+            
+            hasMorePages = allCards.Count >= pageSize;
+            
+            Logger.LogInformation("Loaded collection with {CardCount} cards", allCards.Count);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading collection");
+            errorMessage = "An error occurred while loading your collection. Please try again.";
+            allCards = new();
+            filteredCards = new();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
+        {
+            stats = await CardCollectionService.GetCollectionStatisticsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading collection statistics");
+        }
+    }
+
+    private async Task SearchCollection(string term)
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            searchTerm = term;
+            currentPage = 1;
+            
+            if (string.IsNullOrWhiteSpace(term))
+            {
+                await LoadCollection();
+            }
+            else
+            {
+                var searchResults = await CardCollectionService.SearchLocalCardsAsync(term);
+                filteredCards = searchResults.ToList();
+                hasMorePages = false;
+                Logger.LogInformation("Searched collection for '{Term}' found {Count} results", 
+                    term, filteredCards.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error searching collection");
+            errorMessage = "An error occurred while searching. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OnTypeFilterChanged(ChangeEventArgs e)
+    {
+        selectedFilter = e.Value?.ToString() ?? string.Empty;
+        currentPage = 1;
+        searchTerm = string.Empty;
+        await LoadCollection();
+    }
+
+    private async Task OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newSize))
+        {
+            pageSize = newSize;
+            currentPage = 1;
+            await LoadCollection();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        currentPage++;
+        await LoadCollection();
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadCollection();
+        }
+    }
+
+    private void ViewCardDetails(int cardId)
+    {
+        NavigationManager.NavigateTo($"/card-detail/{cardId}");
+    }
+
+    private void EditCard(int cardId)
+    {
+        NavigationManager.NavigateTo($"/card-edit/{cardId}");
+    }
+
+    private async Task RemoveCard(int cardId)
+    {
+        var cardToRemove = filteredCards.FirstOrDefault(c => c.Id == cardId);
+        if (cardToRemove == null)
+            return;
+
+        if (!await ConfirmRemoval())
+            return;
+
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            
+            var removed = await CardCollectionService.RemoveCardAsync(cardId);
+            if (removed)
+            {
+                successMessage = $"Removed '{cardToRemove.Name}' from your collection.";
+                filteredCards.RemoveAll(c => c.Id == cardId);
+                allCards.RemoveAll(c => c.Id == cardId);
+                await LoadStatistics();
+                Logger.LogInformation("Removed card from collection: {CardName}", cardToRemove.Name);
+            }
+            else
+            {
+                errorMessage = "Could not remove the card. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error removing card");
+            errorMessage = "An error occurred while removing the card. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task<bool> ConfirmRemoval()
+    {
+        if (JSRuntime != null)
+        {
+            return await JSRuntime.InvokeAsync<bool>("confirm", 
+                "Are you sure you want to remove this card from your collection?");
+        }
+        return false;
+    }
+
+    [Inject]
+    private IJSRuntime? JSRuntime { get; set; }
+}

@@ -1,0 +1,455 @@
+@page "/card-detail/{CardId:int}"
+@page "/card-edit/{CardId:int}"
+@rendermode InteractiveServer
+@using PokemonCardCollector.Models
+@using PokemonCardCollector.Services
+@inject ICardCollectionService CardCollectionService
+@inject IImageUrlService ImageUrlService
+@inject NavigationManager NavigationManager
+@inject ILogger<CardDetail> Logger
+
+<PageTitle>Card Details - Pokemon Card Collector</PageTitle>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span class="bi bi-exclamation-circle me-2"></span>
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <span class="bi bi-check-circle me-2"></span>
+        @successMessage
+        <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+    </div>
+}
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-muted">Loading card details...</p>
+    </div>
+}
+else if (card != null)
+{
+    <div class="card-detail-container">
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                @if (!string.IsNullOrWhiteSpace(card.ImageUrl))
+                {
+                    <div class="card">
+                        <img 
+                            src="@ImageUrlService.FormatCardImageUrl(card.ImageUrl, "high", "webp")" 
+                            alt="@card.Name" 
+                            class="card-img-top"
+                            style="object-fit: cover; height: 500px;" />
+                    </div>
+                }
+                else
+                {
+                    <div class="card bg-light d-flex align-items-center justify-content-center" style="height: 500px;">
+                        <div class="text-center text-muted">
+                            <span class="bi bi-image" style="font-size: 3rem;"></span>
+                            <p>No image available</p>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h1 class="card-title">@card.Name</h1>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                @card.SetName <span class="mx-2">•</span> #@card.LocalId
+                            </small>
+                            <div class="mt-2">
+                                <span class="badge bg-primary">@card.Rarity</span>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="card-info-grid mb-3">
+                            @if (!string.IsNullOrWhiteSpace(card.Illustrator))
+                            {
+                                <div class="info-row">
+                                    <strong>Illustrator:</strong>
+                                    <span>@card.Illustrator</span>
+                                </div>
+                            }
+
+                            @if (card is PokemonCard pokemonCard && !string.IsNullOrWhiteSpace(pokemonCard.Types))
+                            {
+                                <div class="info-row">
+                                    <strong>Type:</strong>
+                                    <span>@pokemonCard.Types</span>
+                                </div>
+                            }
+
+                            @if (card is PokemonCard pokemonCard2 && pokemonCard2.Hp.HasValue)
+                            {
+                                <div class="info-row">
+                                    <strong>HP:</strong>
+                                    <span>@pokemonCard2.Hp</span>
+                                </div>
+                            }
+
+                            <div class="info-row">
+                                <strong>Card API ID:</strong>
+                                <span><code>@card.ApiId</code></span>
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        <div class="variants-section mb-3">
+                            <h6>Available Variants:</h6>
+                            <div class="variants-list">
+                                @if (card.VariantNormal)
+                                {
+                                    <span class="badge bg-secondary me-2 mb-2">Normal</span>
+                                }
+                                @if (card.VariantHolo)
+                                {
+                                    <span class="badge bg-warning text-dark me-2 mb-2">Holofoil</span>
+                                }
+                                @if (card.VariantReverse)
+                                {
+                                    <span class="badge bg-info me-2 mb-2">Reverse Holo</span>
+                                }
+                                @if (card.VariantFirstEdition)
+                                {
+                                    <span class="badge bg-danger me-2 mb-2">1st Edition</span>
+                                }
+                            </div>
+                        </div>
+
+                        <hr />
+
+                        @if (card.TcgPlayerPrice.HasValue || card.CardmarketPrice.HasValue)
+                        {
+                            <div class="price-section mb-3">
+                                <h6>Market Price:</h6>
+                                <div class="price-list">
+                                    @if (card.TcgPlayerPrice.HasValue)
+                                    {
+                                        <div>
+                                            <strong>TCGPlayer:</strong>
+                                            <span>${card.TcgPlayerPrice:F2} USD</span>
+                                        </div>
+                                    }
+                                    @if (card.CardmarketPrice.HasValue)
+                                    {
+                                        <div>
+                                            <strong>Cardmarket:</strong>
+                                            <span>€{card.CardmarketPrice:F2}</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            <hr />
+                        }
+
+                        @if (isEditMode)
+                        {
+                            <form @onsubmit="SaveChanges">
+                                <div class="mb-3">
+                                    <label for="condition" class="form-label">Condition</label>
+                                    <select 
+                                        id="condition"
+                                        class="form-select"
+                                        @bind="editCondition"
+                                        disabled="@isSaving">
+                                        <option value="">-- Not Set --</option>
+                                        <option value="Mint">Mint</option>
+                                        <option value="NearMint">Near Mint</option>
+                                        <option value="LightlyPlayed">Lightly Played</option>
+                                        <option value="Played">Played</option>
+                                        <option value="PoorCondition">Poor Condition</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="notes" class="form-label">Notes</label>
+                                    <textarea 
+                                        id="notes"
+                                        class="form-control"
+                                        rows="4"
+                                        placeholder="Add personal notes about this card..."
+                                        @bind="editNotes"
+                                        disabled="@isSaving"></textarea>
+                                </div>
+
+                                <div class="btn-group" role="group">
+                                    <button 
+                                        type="submit" 
+                                        class="btn btn-primary"
+                                        disabled="@isSaving">
+                                        @if (isSaving)
+                                        {
+                                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            <span>Saving...</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="bi bi-check-circle me-2"></span>
+                                            <span>Save Changes</span>
+                                        }
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-secondary"
+                                        @onclick="CancelEdit"
+                                        disabled="@isSaving">
+                                        <span class="bi bi-x-circle me-2"></span>Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        }
+                        else
+                        {
+                            <div class="condition-section mb-3">
+                                @if (!string.IsNullOrWhiteSpace(card.Condition))
+                                {
+                                    <div>
+                                        <strong>Condition:</strong>
+                                        <span class="badge" style="@GetConditionBadgeColor(card.Condition)">
+                                            @card.Condition
+                                        </span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-muted">
+                                        <strong>Condition:</strong> Not set
+                                    </div>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(card.UserNotes))
+                            {
+                                <div class="notes-section mb-3">
+                                    <strong>Notes:</strong>
+                                    <p class="text-muted">@card.UserNotes</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-muted mb-3">
+                                    <em>No notes added</em>
+                                </div>
+                            }
+
+                            <hr />
+
+                            <div class="btn-group" role="group">
+                                <button 
+                                    type="button" 
+                                    class="btn btn-warning"
+                                    @onclick="StartEdit">
+                                    <span class="bi bi-pencil me-2"></span>Edit Card
+                                </button>
+                                <button 
+                                    type="button" 
+                                    class="btn btn-danger"
+                                    @onclick="RemoveCard">
+                                    <span class="bi bi-trash me-2"></span>Remove from Collection
+                                </button>
+                                <button 
+                                    type="button" 
+                                    class="btn btn-secondary"
+                                    @onclick="GoBackToCollection">
+                                    <span class="bi bi-arrow-left me-2"></span>Back to Collection
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-warning text-center py-5">
+        <span class="bi bi-exclamation-triangle me-2"></span>
+        <p class="mb-0">Card not found. <a href="/my-collection">Return to collection</a></p>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int CardId { get; set; }
+
+    private Card? card;
+    private bool isLoading = true;
+    private bool isEditMode = false;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private string? successMessage;
+    private string? editCondition;
+    private string? editNotes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCard();
+    }
+
+    private async Task LoadCard()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            
+            // Note: We're using GetUserCollectionAsync to find the card in the collection
+            // A better approach would be to add a GetCardByIdAsync method to ICardCollectionService
+            var allCards = await CardCollectionService.GetUserCollectionAsync(pageSize: 1000);
+            card = allCards.FirstOrDefault(c => c.Id == CardId);
+            
+            if (card != null)
+            {
+                editCondition = card.Condition;
+                editNotes = card.UserNotes;
+                Logger.LogInformation("Loaded card details: {CardName}", card.Name);
+            }
+            else
+            {
+                errorMessage = "Card not found in your collection.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading card details");
+            errorMessage = "An error occurred while loading card details. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void StartEdit()
+    {
+        isEditMode = true;
+    }
+
+    private void CancelEdit()
+    {
+        isEditMode = false;
+        editCondition = card?.Condition;
+        editNotes = card?.UserNotes;
+    }
+
+    private async Task SaveChanges()
+    {
+        if (card == null)
+            return;
+
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+            successMessage = null;
+            
+            var updatedCard = await CardCollectionService.UpdateCardAsync(
+                card.Id,
+                string.IsNullOrWhiteSpace(editCondition) ? null : editCondition,
+                editNotes);
+            
+            card = updatedCard;
+            isEditMode = false;
+            successMessage = $"✓ Updated {card.Name}";
+            Logger.LogInformation("Updated card: {CardName}", card.Name);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving card changes");
+            errorMessage = "An error occurred while saving. Please try again.";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task RemoveCard()
+    {
+        if (card == null)
+            return;
+
+        if (!await ConfirmRemoval())
+            return;
+
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+            
+            var removed = await CardCollectionService.RemoveCardAsync(card.Id);
+            if (removed)
+            {
+                successMessage = $"Removed {card.Name} from your collection.";
+                Logger.LogInformation("Removed card: {CardName}", card.Name);
+                
+                // Redirect after a short delay to show the message
+                await Task.Delay(1000);
+                NavigationManager.NavigateTo("/my-collection");
+            }
+            else
+            {
+                errorMessage = "Could not remove the card. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error removing card");
+            errorMessage = "An error occurred while removing the card. Please try again.";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task<bool> ConfirmRemoval()
+    {
+        if (JSRuntime != null)
+        {
+            return await JSRuntime.InvokeAsync<bool>("confirm", 
+                "Are you sure you want to remove this card from your collection?");
+        }
+        return false;
+    }
+
+    private void GoBackToCollection()
+    {
+        NavigationManager.NavigateTo("/my-collection");
+    }
+
+    private string GetConditionBadgeColor(string condition)
+    {
+        return condition switch
+        {
+            "Mint" => "background-color: #28a745; color: white;",
+            "NearMint" => "background-color: #20c997; color: white;",
+            "LightlyPlayed" => "background-color: #ffc107; color: black;",
+            "Played" => "background-color: #fd7e14; color: white;",
+            "PoorCondition" => "background-color: #dc3545; color: white;",
+            _ => "background-color: #6c757d; color: white;"
+        };
+    }
+
+    [Inject]
+    private IJSRuntime? JSRuntime { get; set; }
+}

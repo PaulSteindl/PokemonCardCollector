@@ -1,0 +1,239 @@
+@page "/card-search"
+@rendermode InteractiveServer
+@using PokemonCardCollector.Models
+@using PokemonCardCollector.Services
+@inject ICardCollectionService CardCollectionService
+@inject NavigationManager NavigationManager
+@inject ILogger<CardSearch> Logger
+
+<PageTitle>Search Cards - Pokemon Card Collector</PageTitle>
+
+<PageHeader 
+    Title="Search Cards"
+    Description="Browse the Pokémon card database and add cards to your collection." />
+
+<div class="search-section mb-4">
+    <SearchBar 
+        Placeholder="Search by card name..."
+        OnSearchRequested="SearchByName"
+        IsSearching="@isSearching" />
+    
+    <div class="row mt-3">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="cardNumber" class="form-label">Search by Card Number</label>
+                <div class="input-group">
+                    <input 
+                        type="text"
+                        id="cardNumber"
+                        class="form-control"
+                        placeholder="e.g., 136"
+                        @bind="cardNumber"
+                        @onkeyup="HandleCardNumberKeyPress" />
+                    <input 
+                        type="text"
+                        class="form-control"
+                        placeholder="Set ID (optional)"
+                        @bind="setId" />
+                    <button 
+                        class="btn btn-primary"
+                        type="button"
+                        @onclick="SearchByNumber"
+                        disabled="@(isSearching || string.IsNullOrWhiteSpace(cardNumber))">
+                        @if (isSearching)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        }
+                        <span>Search by Number</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span class="bi bi-exclamation-circle me-2"></span>
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+    </div>
+}
+
+@if (!string.IsNullOrWhiteSpace(successMessage))
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <span class="bi bi-check-circle me-2"></span>
+        @successMessage
+        <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+    </div>
+}
+
+<div class="search-results">
+    @if (isSearching)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted">Searching for cards...</p>
+        </div>
+    }
+    else if (searchResults != null && searchResults.Count > 0)
+    {
+        <div class="results-header mb-3">
+            <h4>Found @searchResults.Count card@(searchResults.Count != 1 ? "s" : "")</h4>
+        </div>
+        
+        @foreach (var card in searchResults)
+        {
+            <CardCard 
+                Card="@card"
+                ShowAddButton="true"
+                IsAdding="@(addingCardId == card.ApiId)"
+                OnAdd="AddCardToCollection" />
+        }
+    }
+    else if (hasSearched && (searchResults == null || searchResults.Count == 0))
+    {
+        <div class="alert alert-info text-center py-5">
+            <span class="bi bi-info-circle me-2"></span>
+            <p class="mb-0">No cards found. Try searching with a different name or number.</p>
+        </div>
+    }
+    else if (!hasSearched)
+    {
+        <div class="alert alert-secondary text-center py-5">
+            <span class="bi bi-search me-2"></span>
+            <p class="mb-0">Enter a search term to find cards.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Card> searchResults = new();
+    private bool isSearching = false;
+    private bool hasSearched = false;
+    private string? errorMessage;
+    private string? successMessage;
+    private string cardNumber = string.Empty;
+    private string setId = string.Empty;
+    private string addingCardId = string.Empty;
+
+    private async Task SearchByName(string searchTerm)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            errorMessage = "Please enter a card name to search.";
+            return;
+        }
+
+        try
+        {
+            isSearching = true;
+            hasSearched = true;
+            errorMessage = null;
+            successMessage = null;
+            
+            searchResults = (await CardCollectionService.BrowseCardsByNameAsync(searchTerm))
+                .ToList();
+            
+            if (searchResults.Count == 0)
+            {
+                Logger.LogInformation("Card search returned no results for: {SearchTerm}", searchTerm);
+            }
+            else
+            {
+                Logger.LogInformation("Card search found {CardCount} results for: {SearchTerm}", 
+                    searchResults.Count, searchTerm);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "=== ERROR in SearchByName ===");
+            errorMessage = "An error occurred while searching. Please try again.";
+            searchResults = new();
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+
+    private async Task SearchByNumber()
+    {
+        if (string.IsNullOrWhiteSpace(cardNumber))
+        {
+            errorMessage = "Please enter a card number to search.";
+            return;
+        }
+
+        try
+        {
+            isSearching = true;
+            hasSearched = true;
+            errorMessage = null;
+            successMessage = null;
+            
+            searchResults = (await CardCollectionService.BrowseCardsByNumberAsync(
+                cardNumber, 
+                string.IsNullOrWhiteSpace(setId) ? null : setId))
+                .ToList();
+            
+            Logger.LogInformation("Card search by number found {CardCount} results for: {CardNumber}", 
+                searchResults.Count, cardNumber);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error searching cards by number");
+            errorMessage = "An error occurred while searching. Please try again.";
+            searchResults = new();
+        }
+        finally
+        {
+            isSearching = false;
+        }
+    }
+
+    private async Task AddCardToCollection(string apiId)
+    {
+        try
+        {
+            addingCardId = apiId;
+            errorMessage = null;
+            successMessage = null;
+            
+            var addedCard = await CardCollectionService.AddCardFromApiAsync(apiId);
+            
+            successMessage = $"✓ {addedCard.Name} added to your collection!";
+            Logger.LogInformation("Card added to collection: {CardName} ({ApiId})", 
+                addedCard.Name, apiId);
+            
+            // Remove from search results to prevent re-adding
+            searchResults.RemoveAll(c => c.ApiId == apiId);
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+            Logger.LogWarning(ex, "Error adding card to collection");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error adding card to collection");
+            errorMessage = "An error occurred while adding the card. Please try again.";
+        }
+        finally
+        {
+            addingCardId = string.Empty;
+        }
+    }
+
+    private async Task HandleCardNumberKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(cardNumber))
+        {
+            await SearchByNumber();
+        }
+    }
+}

@@ -19,9 +19,9 @@ builder.Services.AddDbContext<PokemonCardDbContext>(options =>
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     if (string.IsNullOrEmpty(connectionString))
         throw new InvalidOperationException("DefaultConnection string is not configured in appsettings.json");
-    
+
     options.UseSqlite(connectionString);
-    
+
     // Enable detailed error messages in development
     if (builder.Environment.IsDevelopment())
     {
@@ -37,6 +37,10 @@ builder.Services.AddScoped<ICardRepository, CardRepository>();
 // Register business logic services
 // Scoped lifetime - coordinates repository and API service calls per request
 builder.Services.AddScoped<ICardCollectionService, CardCollectionService>();
+
+// Register image URL formatting service
+// Singleton lifetime - stateless utility service with no dependencies
+builder.Services.AddSingleton<IImageUrlService, ImageUrlService>();
 
 // Register HTTP client for Pokemon Card API integration using typed client pattern
 // This provides automatic dependency injection of HttpClient with proper lifecycle management

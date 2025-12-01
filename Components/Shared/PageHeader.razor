@@ -1,0 +1,30 @@
+@namespace PokemonCardCollector.Components.Shared
+
+<div class="page-header mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="display-5">@Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Description))
+            {
+                <p class="text-muted lead">@Description</p>
+            }
+        </div>
+        @if (ActionContent != null)
+        {
+            <div class="header-actions">
+                @ActionContent
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public required string Title { get; set; }
+
+    [Parameter]
+    public string? Description { get; set; }
+
+    [Parameter]
+    public RenderFragment? ActionContent { get; set; }
+}

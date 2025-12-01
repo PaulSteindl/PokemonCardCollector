@@ -15,7 +15,7 @@ public class PokemonCardApiService : IPokemonCardApiService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<PokemonCardApiService> _logger;
-    private const string BaseUrl = "https://api.tcgdex.net/v2/en";
+    private const string BaseUrl = "https://api.tcgdex.net/v2/en/";
     private const int MaxPageSize = 100; // Recommended page size for v2 API
 
     /// <summary>
@@ -68,17 +68,14 @@ public class PokemonCardApiService : IPokemonCardApiService
         {
             _logger.LogInformation("Searching for cards by name: {CardName}", cardName);
 
-            var queryBuilder = new UriBuilder(_httpClient.BaseAddress!);
-            var query = HttpUtility.ParseQueryString(queryBuilder.Query);
-            query["name"] = cardName;
-            queryBuilder.Query = query.ToString();
-
-            var requestUrl = $"/cards?name={Uri.EscapeDataString(cardName)}";
+            var requestUrl = $"cards?name={Uri.EscapeDataString(cardName)}";
+            _logger.LogInformation("Request URL: {BaseAddress}{RequestUrl}", _httpClient.BaseAddress, requestUrl);
 
             var response = await _httpClient
                 .GetAsync(requestUrl, cancellationToken)
                 .ConfigureAwait(false);
 
+            _logger.LogInformation("Response status: {StatusCode}", response.StatusCode);
             response.EnsureSuccessStatusCode();
 
             var apiDtos = await response.Content
@@ -142,8 +139,8 @@ public class PokemonCardApiService : IPokemonCardApiService
 
             // Build query parameters for v2 API
             var requestUrl = string.IsNullOrWhiteSpace(setId)
-                ? $"/cards?localId={Uri.EscapeDataString(cardNumber)}"
-                : $"/cards?localId={Uri.EscapeDataString(cardNumber)}&set.id={Uri.EscapeDataString(setId)}";
+                ? $"cards?localId={Uri.EscapeDataString(cardNumber)}"
+                : $"cards?localId={Uri.EscapeDataString(cardNumber)}&set.id={Uri.EscapeDataString(setId)}";
 
             var response = await _httpClient
                 .GetAsync(requestUrl, cancellationToken)
@@ -210,7 +207,7 @@ public class PokemonCardApiService : IPokemonCardApiService
             _logger.LogInformation("Fetching card by API ID: {ApiId}", apiId);
 
             var response = await _httpClient
-                .GetAsync($"/cards/{apiId}", cancellationToken)
+                .GetAsync($"cards/{apiId}", cancellationToken)
                 .ConfigureAwait(false);
 
             if (!response.IsSuccessStatusCode)
@@ -290,7 +287,7 @@ public class PokemonCardApiService : IPokemonCardApiService
             _logger.LogInformation("Fetching cards for set: {SetId}, Page: {PageNumber}, Size: {PageSize}", setId, pageNumber, clampedPageSize);
 
             // v2 API uses pagination:page and pagination:itemsPerPage query parameters
-            var requestUrl = $"/cards?set.id={Uri.EscapeDataString(setId)}&pagination:page={pageNumber}&pagination:itemsPerPage={clampedPageSize}";
+            var requestUrl = $"cards?set.id={Uri.EscapeDataString(setId)}&pagination:page={pageNumber}&pagination:itemsPerPage={clampedPageSize}";
 
             var response = await _httpClient
                 .GetAsync(requestUrl, cancellationToken)
@@ -342,7 +339,7 @@ public class PokemonCardApiService : IPokemonCardApiService
             _logger.LogInformation("Fetching available sets from API");
 
             var response = await _httpClient
-                .GetAsync("/sets", cancellationToken)
+                .GetAsync("sets", cancellationToken)
                 .ConfigureAwait(false);
 
             response.EnsureSuccessStatusCode();

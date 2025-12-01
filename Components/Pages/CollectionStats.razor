@@ -1,0 +1,313 @@
+@page "/collection-stats"
+@rendermode InteractiveServer
+@using PokemonCardCollector.Models
+@using PokemonCardCollector.Services
+@inject ICardCollectionService CardCollectionService
+@inject ILogger<CollectionStats> Logger
+
+<PageTitle>Collection Statistics - Pokemon Card Collector</PageTitle>
+
+<PageHeader 
+    Title="Collection Statistics"
+    Description="Detailed insights and analytics about your Pokémon card collection." />
+
+@if (!string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <span class="bi bi-exclamation-circle me-2"></span>
+        @errorMessage
+        <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+    </div>
+}
+
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-muted">Calculating statistics...</p>
+    </div>
+}
+else if (stats != null)
+{
+    <!-- Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Total Cards</h6>
+                    <h2 class="mb-0">@stats.TotalCards</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Total Value</h6>
+                    <h2 class="mb-0">${stats.TotalValue:F2}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Unique Sets</h6>
+                    <h2 class="mb-0">@stats.UniqueSets</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Rare Cards</h6>
+                    <h2 class="mb-0">@stats.RareCardCount</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Holofoil Cards</h6>
+                    <h2 class="mb-0">@stats.HoloCardCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-secondary">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Reverse Holo Cards</h6>
+                    <h2 class="mb-0">@stats.ReverseHoloCardCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-dark">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">1st Edition Cards</h6>
+                    <h2 class="mb-0">@stats.FirstEditionCardCount</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-light">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Average Card Value</h6>
+                    <h2 class="mb-0">${(stats.TotalCards > 0 ? stats.TotalValue / stats.TotalCards : 0):F2}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breakdowns -->
+    <div class="row g-4 mb-4">
+        <!-- Cards by Type -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Cards by Type</h5>
+                </div>
+                <div class="card-body">
+                    @if (stats.CardsByType != null && stats.CardsByType.Any())
+                    {
+                        <div class="breakdown-list">
+                            @foreach (var item in stats.CardsByType.OrderByDescending(x => x.Value))
+                            {
+                                <div class="breakdown-item mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>@item.Key</strong>
+                                        <span>@item.Value (@(stats.TotalCards > 0 ? Math.Round((double)item.Value / stats.TotalCards * 100, 1) : 0)%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 20px;">
+                                        <div 
+                                            class="progress-bar bg-info"
+                                            role="progressbar"
+                                            style="width: @(stats.TotalCards > 0 ? Math.Round((double)item.Value / stats.TotalCards * 100, 1) : 0)%"
+                                            aria-valuenow="@item.Value"
+                                            aria-valuemin="0"
+                                            aria-valuemax="@stats.TotalCards">
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No breakdown data available</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards by Rarity -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Cards by Rarity</h5>
+                </div>
+                <div class="card-body">
+                    @if (stats.CardsByRarity != null && stats.CardsByRarity.Any())
+                    {
+                        <div class="breakdown-list">
+                            @foreach (var item in stats.CardsByRarity.OrderByDescending(x => x.Value))
+                            {
+                                <div class="breakdown-item mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>@item.Key</strong>
+                                        <span>@item.Value (@(stats.TotalCards > 0 ? Math.Round((double)item.Value / stats.TotalCards * 100, 1) : 0)%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 20px;">
+                                        <div 
+                                            class="progress-bar bg-warning"
+                                            role="progressbar"
+                                            style="width: @(stats.TotalCards > 0 ? Math.Round((double)item.Value / stats.TotalCards * 100, 1) : 0)%"
+                                            aria-valuenow="@item.Value"
+                                            aria-valuemin="0"
+                                            aria-valuemax="@stats.TotalCards">
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No breakdown data available</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Cards by Condition -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Cards by Condition</h5>
+                </div>
+                <div class="card-body">
+                    @if (stats.CardsByCondition != null && stats.CardsByCondition.Any())
+                    {
+                        <div class="breakdown-list">
+                            @foreach (var item in stats.CardsByCondition.OrderByDescending(x => x.Value))
+                            {
+                                <div class="breakdown-item mb-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>@item.Key</strong>
+                                        <span>@item.Value (@(stats.TotalCards > 0 ? Math.Round((double)item.Value / stats.TotalCards * 100, 1) : 0)%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 20px;">
+                                        <div 
+                                            class="progress-bar bg-success"
+                                            role="progressbar"
+                                            style="width: @(stats.TotalCards > 0 ? Math.Round((double)item.Value / stats.TotalCards * 100, 1) : 0)%"
+                                            aria-valuenow="@item.Value"
+                                            aria-valuemin="0"
+                                            aria-valuemax="@stats.TotalCards">
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No condition data available</p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Type Breakdown Summary -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">Card Types Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="breakdown-list">
+                        <div class="breakdown-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>
+                                    <span class="bi bi-star-fill text-warning me-2"></span>
+                                    Pokémon Cards
+                                </span>
+                                <strong>@stats.PokemonCardCount</strong>
+                            </div>
+                        </div>
+                        <div class="breakdown-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>
+                                    <span class="bi bi-person-fill text-primary me-2"></span>
+                                    Trainer Cards
+                                </span>
+                                <strong>@stats.TrainerCardCount</strong>
+                            </div>
+                        </div>
+                        <div class="breakdown-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>
+                                    <span class="bi bi-lightning-fill text-success me-2"></span>
+                                    Energy Cards
+                                </span>
+                                <strong>@stats.EnergyCardCount</strong>
+                            </div>
+                        </div>
+                        <hr />
+                        <div class="breakdown-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Total</strong>
+                                <strong>@stats.TotalCards</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info text-center py-5">
+        <span class="bi bi-info-circle me-2"></span>
+        <p class="mb-0">No data available. Add cards to your collection to see statistics.</p>
+    </div>
+}
+
+@code {
+    private CollectionStatistics? stats;
+    private bool isLoading = true;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStatistics();
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+            
+            stats = await CardCollectionService.GetCollectionStatisticsAsync();
+            
+            Logger.LogInformation("Loaded collection statistics");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading collection statistics");
+            errorMessage = "An error occurred while loading statistics. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

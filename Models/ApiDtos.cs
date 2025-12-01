@@ -1,6 +1,8 @@
 namespace PokemonCardCollector.Models;
 
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+using PokemonCardCollector.Models.JsonConverters;
 
 /// <summary>
 /// DTO for a brief card response from TCGdex v2 API search results.
@@ -28,9 +30,10 @@ public class CardBriefApiDto
 
     /// <summary>
     /// Gets or sets the URL to the card image.
+    /// Optional - some API responses may not include it.
     /// </summary>
-    [Required(ErrorMessage = "Card image URL is required")]
-    public required string Image { get; set; }
+    [Url(ErrorMessage = "Image must be a valid URL")]
+    public string? Image { get; set; }
 }
 
 /// <summary>
@@ -287,10 +290,10 @@ public class AttackApiDto
     public string? Effect { get; set; }
 
     /// <summary>
-    /// Gets or sets the damage dealt by the attack.
+    /// Gets or sets the damage dealt by the attack (can be a string like "50+" or a number).
     /// </summary>
-    [Range(0, 500, ErrorMessage = "Attack damage must be between 0 and 500")]
-    public int? Damage { get; set; }
+    [JsonConverter(typeof(DamageJsonConverter))]
+    public string? Damage { get; set; }
 }
 
 /// <summary>
