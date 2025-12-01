@@ -1,5 +1,7 @@
 namespace PokemonCardCollector.Models;
 
+using System.ComponentModel.DataAnnotations;
+
 /// <summary>
 /// DTO for a brief card response from TCGdex v2 API search results.
 /// Contains minimal card information for listing operations.
@@ -9,21 +11,25 @@ public class CardBriefApiDto
     /// <summary>
     /// Gets or sets the unique API identifier (e.g., "swsh3-136").
     /// </summary>
+    [Required(ErrorMessage = "Card ID is required")]
     public required string Id { get; set; }
 
     /// <summary>
     /// Gets or sets the card number within its set.
     /// </summary>
+    [Required(ErrorMessage = "Local ID is required")]
     public required string LocalId { get; set; }
 
     /// <summary>
     /// Gets or sets the official card name.
     /// </summary>
+    [Required(ErrorMessage = "Card name is required")]
     public required string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the URL to the card image.
     /// </summary>
+    [Required(ErrorMessage = "Card image URL is required")]
     public required string Image { get; set; }
 }
 
@@ -35,6 +41,7 @@ public class PokemonCardApiDto
     /// <summary>
     /// Gets or sets the unique API identifier (e.g., "swsh3-136").
     /// </summary>
+    [Required(ErrorMessage = "Card ID is required")]
     public required string Id { get; set; }
 
     /// <summary>
@@ -45,16 +52,20 @@ public class PokemonCardApiDto
     /// <summary>
     /// Gets or sets the official card name.
     /// </summary>
+    [Required(ErrorMessage = "Card name is required")]
     public required string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the card category: "Pokemon", "Trainer", or "Energy".
     /// </summary>
+    [Required(ErrorMessage = "Card category is required")]
+    [RegularExpression("^(Pokemon|Trainer|Energy)$", ErrorMessage = "Category must be Pokemon, Trainer, or Energy")]
     public required string Category { get; set; }
 
     /// <summary>
     /// Gets or sets the URL to the card image.
     /// </summary>
+    [Url(ErrorMessage = "Image must be a valid URL")]
     public string? Image { get; set; }
 
     /// <summary>
@@ -90,6 +101,7 @@ public class PokemonCardApiDto
     /// <summary>
     /// Gets or sets the Hit Points.
     /// </summary>
+    [Range(0, 500, ErrorMessage = "HP must be between 0 and 500")]
     public int? Hp { get; set; }
 
     /// <summary>
@@ -135,6 +147,7 @@ public class PokemonCardApiDto
     /// <summary>
     /// Gets or sets the retreat cost.
     /// </summary>
+    [Range(0, 50, ErrorMessage = "Retreat cost must be between 0 and 50")]
     public int? Retreat { get; set; }
 
     /// <summary>
@@ -176,21 +189,25 @@ public class CardSetApiDto
     /// <summary>
     /// Gets or sets the set identifier.
     /// </summary>
+    [Required(ErrorMessage = "Set ID is required")]
     public required string Id { get; set; }
 
     /// <summary>
     /// Gets or sets the set name.
     /// </summary>
+    [Required(ErrorMessage = "Set name is required")]
     public required string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the set logo URL.
     /// </summary>
+    [Url(ErrorMessage = "Logo URL must be a valid URL")]
     public string? Logo { get; set; }
 
     /// <summary>
     /// Gets or sets the set symbol URL.
     /// </summary>
+    [Url(ErrorMessage = "Symbol URL must be a valid URL")]
     public string? Symbol { get; set; }
 
     /// <summary>
@@ -207,11 +224,13 @@ public class CardCountApiDto
     /// <summary>
     /// Gets or sets the total number of cards in the set.
     /// </summary>
+    [Range(0, int.MaxValue, ErrorMessage = "Total card count must be non-negative")]
     public int Total { get; set; }
 
     /// <summary>
     /// Gets or sets the number of officially released cards in the set.
     /// </summary>
+    [Range(0, int.MaxValue, ErrorMessage = "Official card count must be non-negative")]
     public int Official { get; set; }
 }
 
@@ -254,6 +273,7 @@ public class AttackApiDto
     /// <summary>
     /// Gets or sets the attack name.
     /// </summary>
+    [Required(ErrorMessage = "Attack name is required")]
     public required string Name { get; set; }
 
     /// <summary>
@@ -269,6 +289,7 @@ public class AttackApiDto
     /// <summary>
     /// Gets or sets the damage dealt by the attack.
     /// </summary>
+    [Range(0, 500, ErrorMessage = "Attack damage must be between 0 and 500")]
     public int? Damage { get; set; }
 }
 
@@ -280,16 +301,19 @@ public class AbilityApiDto
     /// <summary>
     /// Gets or sets the ability name.
     /// </summary>
+    [Required(ErrorMessage = "Ability name is required")]
     public required string Name { get; set; }
 
     /// <summary>
     /// Gets or sets the ability type.
     /// </summary>
+    [Required(ErrorMessage = "Ability type is required")]
     public required string Type { get; set; }
 
     /// <summary>
     /// Gets or sets the ability effect text.
     /// </summary>
+    [Required(ErrorMessage = "Ability effect is required")]
     public required string Effect { get; set; }
 }
 
@@ -301,11 +325,13 @@ public class WeaknessResistanceApiDto
     /// <summary>
     /// Gets or sets the type affected by weakness or resistance.
     /// </summary>
+    [Required(ErrorMessage = "Type is required")]
     public required string Type { get; set; }
 
     /// <summary>
     /// Gets or sets the value (e.g., "×2" for weakness or "-20" for resistance).
     /// </summary>
+    [Required(ErrorMessage = "Value is required")]
     public required string Value { get; set; }
 }
 
@@ -354,6 +380,7 @@ public class PriceMarketApiDto
     /// <summary>
     /// Gets or sets the currency unit (USD, EUR, etc.).
     /// </summary>
+    [StringLength(10, ErrorMessage = "Currency unit cannot exceed 10 characters")]
     public string? Unit { get; set; }
 
     /// <summary>
@@ -364,16 +391,19 @@ public class PriceMarketApiDto
     /// <summary>
     /// Gets or sets the average price (for Cardmarket).
     /// </summary>
+    [Range(0.01, 999999.99, ErrorMessage = "Average price must be between 0.01 and 999999.99")]
     public decimal? Avg { get; set; }
 
     /// <summary>
     /// Gets or sets the lowest price (for Cardmarket).
     /// </summary>
+    [Range(0.01, 999999.99, ErrorMessage = "Low price must be between 0.01 and 999999.99")]
     public decimal? Low { get; set; }
 
     /// <summary>
     /// Gets or sets the trend price (for Cardmarket).
     /// </summary>
+    [Range(0.01, 999999.99, ErrorMessage = "Trend price must be between 0.01 and 999999.99")]
     public decimal? Trend { get; set; }
 }
 
@@ -385,16 +415,19 @@ public class PriceVariantApiDto
     /// <summary>
     /// Gets or sets the lowest available price.
     /// </summary>
+    [Range(0.01, 999999.99, ErrorMessage = "Low price must be between 0.01 and 999999.99")]
     public decimal? LowPrice { get; set; }
 
     /// <summary>
     /// Gets or sets the median market price.
     /// </summary>
+    [Range(0.01, 999999.99, ErrorMessage = "Mid price must be between 0.01 and 999999.99")]
     public decimal? MidPrice { get; set; }
 
     /// <summary>
     /// Gets or sets the highest available price.
     /// </summary>
+    [Range(0.01, 999999.99, ErrorMessage = "High price must be between 0.01 and 999999.99")]
     public decimal? HighPrice { get; set; }
 
     /// <summary>
