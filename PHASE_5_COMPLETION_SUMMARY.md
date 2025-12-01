@@ -114,7 +114,7 @@ All UI components properly inject and use:
 - `Models/ApiDtos.cs` (added using statement and attribute)
 
 ### Bug Fix: Image URL Formatting (ImageUrlService)
-**Issue**: TCGdex API returns base image URLs without file extensions or quality parameters (e.g., `https://assets.tcgdex.net/en/swsh/swsh3/136`). According to [TCGdex documentation](https://tcgdex.dev/assets), URLs must be formatted as `{baseUrl}/{quality}.{extension}` for cards.
+**Issue**: TCGdex API returns base image URLs without file extensions or quality parameters (e.g., `https://assets.tcgdex.net/de/swsh/swsh3/136`). According to [TCGdex documentation](https://tcgdex.dev/assets), URLs must be formatted as `{baseUrl}/{quality}.{extension}` for cards.
 
 **Solution**: Created `IImageUrlService` and `ImageUrlService` that:
 - Formats card image URLs: `FormatCardImageUrl(baseUrl, quality, extension)`

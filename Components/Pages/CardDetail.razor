@@ -143,16 +143,16 @@ else if (card != null)
                                 <div class="price-list">
                                     @if (card.TcgPlayerPrice.HasValue)
                                     {
-                                        <div>
+                                        <div class="price-item">
                                             <strong>TCGPlayer:</strong>
-                                            <span>${card.TcgPlayerPrice:F2} USD</span>
+                                            <span>$@card.TcgPlayerPrice.Value.ToString("F2") USD</span>
                                         </div>
                                     }
                                     @if (card.CardmarketPrice.HasValue)
                                     {
-                                        <div>
+                                        <div class="price-item">
                                             <strong>Cardmarket:</strong>
-                                            <span>€{card.CardmarketPrice:F2}</span>
+                                            <span>€@card.CardmarketPrice.Value.ToString("F2")</span>
                                         </div>
                                     }
                                 </div>

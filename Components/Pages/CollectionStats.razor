@@ -45,7 +45,7 @@ else if (stats != null)
             <div class="card border-success">
                 <div class="card-body">
                     <h6 class="card-title text-muted">Total Value</h6>
-                    <h2 class="mb-0">${stats.TotalValue:F2}</h2>
+                    <h2 class="mb-0">$@stats.TotalValue.ToString("F2")</h2>
                 </div>
             </div>
         </div>
@@ -96,7 +96,7 @@ else if (stats != null)
             <div class="card border-light">
                 <div class="card-body">
                     <h6 class="card-title text-muted">Average Card Value</h6>
-                    <h2 class="mb-0">${(stats.TotalCards > 0 ? stats.TotalValue / stats.TotalCards : 0):F2}</h2>
+                    <h2 class="mb-0">$@((stats.TotalCards > 0 ? stats.TotalValue / stats.TotalCards : 0).ToString("F2"))</h2>
                 </div>
             </div>
         </div>

@@ -116,4 +116,12 @@ public interface ICardCollectionService
     /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
     /// <returns>An enumerable collection of all available card sets.</returns>
     Task<IEnumerable<CardSetApiDto>> GetAvailableSetsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Refreshes pricing data for all cards in the collection by re-fetching from the API.
+    /// Updates TcgPlayerPrice and CardmarketPrice for all existing cards.
+    /// </summary>
+    /// <param name="cancellationToken">A cancellation token to cancel the operation.</param>
+    /// <returns>The number of cards successfully updated.</returns>
+    Task<int> RefreshAllCardPricingAsync(CancellationToken cancellationToken = default);
 }

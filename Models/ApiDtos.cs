@@ -270,14 +270,14 @@ public class CardVariantsApiDto
 
 /// <summary>
 /// DTO for attack information in card API responses.
+/// Supports multi-language API responses (en, de, etc.).
 /// </summary>
 public class AttackApiDto
 {
     /// <summary>
     /// Gets or sets the attack name.
     /// </summary>
-    [Required(ErrorMessage = "Attack name is required")]
-    public required string Name { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// Gets or sets the energy cost of the attack.
@@ -298,44 +298,42 @@ public class AttackApiDto
 
 /// <summary>
 /// DTO for ability information in card API responses.
+/// Supports multi-language API responses (en, de, etc.).
 /// </summary>
 public class AbilityApiDto
 {
     /// <summary>
     /// Gets or sets the ability name.
     /// </summary>
-    [Required(ErrorMessage = "Ability name is required")]
-    public required string Name { get; set; }
+    public string? Name { get; set; }
 
     /// <summary>
     /// Gets or sets the ability type.
     /// </summary>
-    [Required(ErrorMessage = "Ability type is required")]
-    public required string Type { get; set; }
+    public string? Type { get; set; }
 
     /// <summary>
     /// Gets or sets the ability effect text.
+    /// May be null or empty in some localized API responses.
     /// </summary>
-    [Required(ErrorMessage = "Ability effect is required")]
-    public required string Effect { get; set; }
+    public string? Effect { get; set; }
 }
 
 /// <summary>
 /// DTO for weakness/resistance information in card API responses.
+/// Supports multi-language API responses (en, de, etc.).
 /// </summary>
 public class WeaknessResistanceApiDto
 {
     /// <summary>
     /// Gets or sets the type affected by weakness or resistance.
     /// </summary>
-    [Required(ErrorMessage = "Type is required")]
-    public required string Type { get; set; }
+    public string? Type { get; set; }
 
     /// <summary>
     /// Gets or sets the value (e.g., "×2" for weakness or "-20" for resistance).
     /// </summary>
-    [Required(ErrorMessage = "Value is required")]
-    public required string Value { get; set; }
+    public string? Value { get; set; }
 }
 
 /// <summary>
@@ -372,6 +370,7 @@ public class PricingApiDto
 
 /// <summary>
 /// DTO for marketplace pricing information in API responses.
+/// Supports both TCGPlayer (variant-based) and Cardmarket (flat structure) pricing formats.
 /// </summary>
 public class PriceMarketApiDto
 {
@@ -390,6 +389,18 @@ public class PriceMarketApiDto
     /// Gets or sets the normal (non-foil) variant pricing.
     /// </summary>
     public PriceVariantApiDto? Normal { get; set; }
+
+    /// <summary>
+    /// Gets or sets the holofoil variant pricing (TCGPlayer).
+    /// </summary>
+    [JsonPropertyName("holofoil")]
+    public PriceVariantApiDto? Holofoil { get; set; }
+
+    /// <summary>
+    /// Gets or sets the reverse holofoil variant pricing (TCGPlayer).
+    /// </summary>
+    [JsonPropertyName("reverse-holofoil")]
+    public PriceVariantApiDto? ReverseHolofoil { get; set; }
 
     /// <summary>
     /// Gets or sets the average price (for Cardmarket).

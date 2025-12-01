@@ -19,34 +19,35 @@
         IsSearching="@isSearching" />
     
     <div class="row mt-3">
-        <div class="col-md-6">
+        <div class="col-md-12">
             <div class="form-group">
-                <label for="cardNumber" class="form-label">Search by Card Number</label>
+                <label for="advancedSearch" class="form-label">Advanced Search (Name + Card Number)</label>
                 <div class="input-group">
                     <input 
                         type="text"
-                        id="cardNumber"
                         class="form-control"
-                        placeholder="e.g., 136"
-                        @bind="cardNumber"
-                        @onkeyup="HandleCardNumberKeyPress" />
+                        placeholder="Pokemon name (required)"
+                        @bind="advancedSearchName" />
                     <input 
                         type="text"
+                        id="advancedSearch"
                         class="form-control"
-                        placeholder="Set ID (optional)"
-                        @bind="setId" />
+                        placeholder="Card number (e.g., 5)"
+                        @bind="advancedSearchNumber"
+                        @onkeyup="HandleAdvancedSearchKeyPress" />
                     <button 
                         class="btn btn-primary"
                         type="button"
-                        @onclick="SearchByNumber"
-                        disabled="@(isSearching || string.IsNullOrWhiteSpace(cardNumber))">
+                        @onclick="SearchByNameAndNumber"
+                        disabled="@(isSearching || string.IsNullOrWhiteSpace(advancedSearchName))">
                         @if (isSearching)
                         {
                             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                         }
-                        <span>Search by Number</span>
+                        <span>Search</span>
                     </button>
                 </div>
+                <small class="text-muted">Combine Pokemon name with card number for specific results</small>
             </div>
         </div>
     </div>
@@ -117,8 +118,8 @@
     private bool hasSearched = false;
     private string? errorMessage;
     private string? successMessage;
-    private string cardNumber = string.Empty;
-    private string setId = string.Empty;
+    private string advancedSearchName = string.Empty;
+    private string advancedSearchNumber = string.Empty;
     private string addingCardId = string.Empty;
 
     private async Task SearchByName(string searchTerm)
@@ -161,11 +162,11 @@
         }
     }
 
-    private async Task SearchByNumber()
+    private async Task SearchByNameAndNumber()
     {
-        if (string.IsNullOrWhiteSpace(cardNumber))
+        if (string.IsNullOrWhiteSpace(advancedSearchName))
         {
-            errorMessage = "Please enter a card number to search.";
+            errorMessage = "Please enter a Pokemon name to search.";
             return;
         }
 
@@ -176,17 +177,31 @@
             errorMessage = null;
             successMessage = null;
             
-            searchResults = (await CardCollectionService.BrowseCardsByNumberAsync(
-                cardNumber, 
-                string.IsNullOrWhiteSpace(setId) ? null : setId))
-                .ToList();
-            
-            Logger.LogInformation("Card search by number found {CardCount} results for: {CardNumber}", 
-                searchResults.Count, cardNumber);
+            // If card number is provided, combine it with the name
+            if (!string.IsNullOrWhiteSpace(advancedSearchNumber))
+            {
+                searchResults = (await CardCollectionService.BrowseCardsByNumberAsync(
+                    advancedSearchNumber, 
+                    null))
+                    .Where(c => c.Name.Contains(advancedSearchName, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                
+                Logger.LogInformation("Advanced search found {CardCount} results for: {Name} #{Number}", 
+                    searchResults.Count, advancedSearchName, advancedSearchNumber);
+            }
+            else
+            {
+                // If no card number, just search by name
+                searchResults = (await CardCollectionService.BrowseCardsByNameAsync(advancedSearchName))
+                    .ToList();
+                
+                Logger.LogInformation("Card search found {CardCount} results for: {SearchTerm}", 
+                    searchResults.Count, advancedSearchName);
+            }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error searching cards by number");
+            Logger.LogError(ex, "Error in advanced search");
             errorMessage = "An error occurred while searching. Please try again.";
             searchResults = new();
         }
@@ -231,9 +246,17 @@
 
     private async Task HandleCardNumberKeyPress(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(cardNumber))
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(advancedSearchName))
         {
-            await SearchByNumber();
+            await SearchByNameAndNumber();
+        }
+    }
+
+    private async Task HandleAdvancedSearchKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(advancedSearchName))
+        {
+            await SearchByNameAndNumber();
         }
     }
 }

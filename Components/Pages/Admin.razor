@@ -1,0 +1,101 @@
+@page "/admin"
+@rendermode InteractiveServer
+@using PokemonCardCollector.Services
+@using PokemonCardCollector.Components.Shared
+@inject ICardCollectionService CardCollectionService
+@inject ILogger<Admin> Logger
+
+<PageTitle>Admin - Pokemon Card Collector</PageTitle>
+
+<div class="container mt-4">
+    <h1 class="mb-4">Admin Tools</h1>
+
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Refresh Card Pricing</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">
+                This will refresh pricing data (TCGPlayer and Cardmarket) for all cards in your collection
+                by fetching the latest information from the API.
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <span class="bi bi-exclamation-circle me-2"></span>
+                    @errorMessage
+                    <button type="button" class="btn-close" @onclick="() => errorMessage = null"></button>
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(successMessage))
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <span class="bi bi-check-circle me-2"></span>
+                    @successMessage
+                    <button type="button" class="btn-close" @onclick="() => successMessage = null"></button>
+                </div>
+            }
+
+            @if (isRefreshing)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Refreshing...</span>
+                    </div>
+                    <p class="text-muted">Refreshing pricing data... This may take a while.</p>
+                    @if (progressMessage is not null)
+                    {
+                        <p class="text-muted"><small>@progressMessage</small></p>
+                    }
+                </div>
+            }
+            else
+            {
+                <button 
+                    class="btn btn-primary"
+                    @onclick="RefreshPricing"
+                    disabled="@isRefreshing">
+                    <span class="bi bi-arrow-clockwise me-2"></span>
+                    Refresh All Card Pricing
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isRefreshing = false;
+    private string? errorMessage;
+    private string? successMessage;
+    private string? progressMessage;
+
+    private async Task RefreshPricing()
+    {
+        try
+        {
+            isRefreshing = true;
+            errorMessage = null;
+            successMessage = null;
+            progressMessage = "Starting pricing refresh...";
+
+            Logger.LogInformation("Admin initiated pricing refresh");
+
+            var updatedCount = await CardCollectionService.RefreshAllCardPricingAsync();
+
+            successMessage = $"✓ Successfully updated pricing for {updatedCount} cards!";
+            Logger.LogInformation("Pricing refresh completed: {UpdatedCount} cards updated", updatedCount);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during pricing refresh");
+            errorMessage = "An error occurred while refreshing pricing. Please check the logs.";
+        }
+        finally
+        {
+            isRefreshing = false;
+            progressMessage = null;
+        }
+    }
+}

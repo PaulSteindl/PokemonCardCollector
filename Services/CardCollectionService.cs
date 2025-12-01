@@ -53,7 +53,7 @@ public class CardCollectionService(
 
             // Add to database
             var addedCard = await _cardRepository.AddCardAsync(cardFromApi, cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation("Successfully added card to collection: {CardName} (API ID: {ApiId})", 
+            _logger.LogInformation("Successfully added card to collection: {CardName} (API ID: {ApiId})",
                 addedCard.Name, addedCard.ApiId);
 
             return addedCard;
@@ -96,7 +96,7 @@ public class CardCollectionService(
             var results = await _cardRepository.SearchByNameAsync(cardName, cancellationToken).ConfigureAwait(false);
             var resultList = results.ToList();
 
-            _logger.LogInformation("Found {CardCount} cards in local collection matching: {CardName}", 
+            _logger.LogInformation("Found {CardCount} cards in local collection matching: {CardName}",
                 resultList.Count, cardName);
 
             return resultList;
@@ -128,7 +128,7 @@ public class CardCollectionService(
     {
         try
         {
-            _logger.LogInformation("Retrieving user collection - Type: {CardType}, Page: {PageNumber}, Size: {PageSize}", 
+            _logger.LogInformation("Retrieving user collection - Type: {CardType}, Page: {PageNumber}, Size: {PageSize}",
                 cardType ?? "all", pageNumber, pageSize);
 
             IEnumerable<Card> cards;
@@ -315,7 +315,7 @@ public class CardCollectionService(
                 .GroupBy(c => c.Condition)
                 .ToDictionary(g => g.Key ?? "Unknown", g => g.Count());
 
-            _logger.LogInformation("Collection statistics calculated - Total cards: {TotalCards}, Total value: {TotalValue:C}", 
+            _logger.LogInformation("Collection statistics calculated - Total cards: {TotalCards}, Total value: {TotalValue:C}",
                 stats.TotalCards, stats.TotalValue);
 
             return stats;
@@ -350,7 +350,7 @@ public class CardCollectionService(
             var results = await _apiService.SearchCardsByNameAsync(cardName, cancellationToken).ConfigureAwait(false);
             var resultList = results.ToList();
 
-            _logger.LogInformation("Found {CardCount} cards in external API matching: {CardName}", 
+            _logger.LogInformation("Found {CardCount} cards in external API matching: {CardName}",
                 resultList.Count, cardName);
 
             return resultList;
@@ -387,14 +387,14 @@ public class CardCollectionService(
 
         try
         {
-            _logger.LogInformation("Browsing external API for card number: {CardNumber}, Set: {SetId}", 
+            _logger.LogInformation("Browsing external API for card number: {CardNumber}, Set: {SetId}",
                 cardNumber, setId ?? "any");
 
             var results = await _apiService.SearchCardsByNumberAsync(cardNumber, setId, cancellationToken)
                 .ConfigureAwait(false);
             var resultList = results.ToList();
 
-            _logger.LogInformation("Found {CardCount} cards in external API with number: {CardNumber}", 
+            _logger.LogInformation("Found {CardCount} cards in external API with number: {CardNumber}",
                 resultList.Count, cardNumber);
 
             return resultList;
@@ -494,5 +494,69 @@ public class CardCollectionService(
     private static decimal CalculateTotalValue(IEnumerable<Card> cards)
     {
         return cards.Sum(c => c.EstimatedValue ?? c.TcgPlayerPrice ?? (c.CardmarketPrice ?? 0m));
+    }
+
+    /// <summary>
+    /// Refreshes pricing data for all cards in the collection by re-fetching from the API.
+    /// </summary>
+    public async Task<int> RefreshAllCardPricingAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogInformation("Starting pricing refresh for all cards in collection");
+
+            var allCards = await _cardRepository.GetAllCardsAsync(cancellationToken).ConfigureAwait(false);
+            var cardsList = allCards.ToList();
+            var updatedCount = 0;
+
+            foreach (var card in cardsList)
+            {
+                try
+                {
+                    _logger.LogInformation("Refreshing pricing for card: {CardName} ({ApiId})", card.Name, card.ApiId);
+
+                    // Fetch latest data from API
+                    var apiCard = await _apiService.GetCardByApiIdAsync(card.ApiId, cancellationToken).ConfigureAwait(false);
+
+                    if (apiCard is not null)
+                    {
+                        // Update pricing fields
+                        card.TcgPlayerPrice = apiCard.TcgPlayerPrice;
+                        card.CardmarketPrice = apiCard.CardmarketPrice;
+                        card.Updated = DateTime.UtcNow;
+
+                        await _cardRepository.UpdateCardAsync(card, cancellationToken).ConfigureAwait(false);
+                        updatedCount++;
+
+                        _logger.LogInformation("Updated pricing for {CardName}: TCGPlayer={TcgPrice}, Cardmarket={CmPrice}",
+                            card.Name, card.TcgPlayerPrice, card.CardmarketPrice);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Could not fetch updated data for card: {ApiId}", card.ApiId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error refreshing pricing for card: {ApiId}", card.ApiId);
+                    // Continue with next card even if one fails
+                }
+            }
+
+            _logger.LogInformation("Pricing refresh complete. Updated {UpdatedCount} of {TotalCount} cards",
+                updatedCount, cardsList.Count);
+
+            return updatedCount;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogWarning("Pricing refresh operation cancelled");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during pricing refresh operation");
+            throw new InvalidOperationException("Failed to refresh card pricing", ex);
+        }
     }
 }

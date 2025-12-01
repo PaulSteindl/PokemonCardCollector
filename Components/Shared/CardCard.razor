@@ -81,11 +81,11 @@
                     <ul class="list-unstyled ms-2">
                         @if (Card.TcgPlayerPrice.HasValue)
                         {
-                            <li>${Card.TcgPlayerPrice:F2} (TCGPlayer)</li>
+                            <li>$@Card.TcgPlayerPrice.Value.ToString("F2") (TCGPlayer)</li>
                         }
                         @if (Card.CardmarketPrice.HasValue)
                         {
-                            <li>€{Card.CardmarketPrice:F2} (Cardmarket)</li>
+                            <li>€@Card.CardmarketPrice.Value.ToString("F2") (Cardmarket)</li>
                         }
                     </ul>
                 </div>

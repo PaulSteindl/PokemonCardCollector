@@ -15,7 +15,7 @@ public class PokemonCardApiService : IPokemonCardApiService
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<PokemonCardApiService> _logger;
-    private const string BaseUrl = "https://api.tcgdex.net/v2/en/";
+    private const string BaseUrl = "https://api.tcgdex.net/v2/de/";
     private const int MaxPageSize = 100; // Recommended page size for v2 API
 
     /// <summary>
@@ -393,6 +393,12 @@ public class PokemonCardApiService : IPokemonCardApiService
             var setId = apiDto.Set?.Id ?? "unknown";
             var setName = apiDto.Set?.Name ?? "Unknown Set";
 
+            // Extract pricing from API response
+            var tcgPrice = apiDto.Pricing?.Tcgplayer?.Holofoil?.MarketPrice
+                ?? apiDto.Pricing?.Tcgplayer?.ReverseHolofoil?.MarketPrice
+                ?? apiDto.Pricing?.Tcgplayer?.Normal?.MarketPrice;
+            var cardmarketPrice = apiDto.Pricing?.Cardmarket?.Avg;
+
             Card card = cardCategory switch
             {
                 "pokemon" => new PokemonCard
@@ -409,8 +415,8 @@ public class PokemonCardApiService : IPokemonCardApiService
                     VariantReverse = apiDto.Variants?.Reverse ?? false,
                     VariantHolo = apiDto.Variants?.Holo ?? false,
                     VariantFirstEdition = apiDto.Variants?.FirstEdition ?? false,
-                    TcgPlayerPrice = apiDto.Pricing?.Tcgplayer?.Normal?.MarketPrice,
-                    CardmarketPrice = apiDto.Pricing?.Cardmarket?.Avg,
+                    TcgPlayerPrice = tcgPrice,
+                    CardmarketPrice = cardmarketPrice,
                     Updated = apiDto.Updated ?? DateTime.UtcNow,
                     DateAdded = DateTime.UtcNow,
                     DexId = apiDto.DexId is not null ? string.Join(",", apiDto.DexId) : null,
@@ -434,8 +440,8 @@ public class PokemonCardApiService : IPokemonCardApiService
                     VariantReverse = apiDto.Variants?.Reverse ?? false,
                     VariantHolo = apiDto.Variants?.Holo ?? false,
                     VariantFirstEdition = apiDto.Variants?.FirstEdition ?? false,
-                    TcgPlayerPrice = apiDto.Pricing?.Tcgplayer?.Normal?.MarketPrice,
-                    CardmarketPrice = apiDto.Pricing?.Cardmarket?.Avg,
+                    TcgPlayerPrice = tcgPrice,
+                    CardmarketPrice = cardmarketPrice,
                     Updated = apiDto.Updated ?? DateTime.UtcNow,
                     DateAdded = DateTime.UtcNow,
                     Effect = apiDto.Effect,
@@ -455,8 +461,8 @@ public class PokemonCardApiService : IPokemonCardApiService
                     VariantReverse = apiDto.Variants?.Reverse ?? false,
                     VariantHolo = apiDto.Variants?.Holo ?? false,
                     VariantFirstEdition = apiDto.Variants?.FirstEdition ?? false,
-                    TcgPlayerPrice = apiDto.Pricing?.Tcgplayer?.Normal?.MarketPrice,
-                    CardmarketPrice = apiDto.Pricing?.Cardmarket?.Avg,
+                    TcgPlayerPrice = tcgPrice,
+                    CardmarketPrice = cardmarketPrice,
                     Updated = apiDto.Updated ?? DateTime.UtcNow,
                     DateAdded = DateTime.UtcNow,
                     EnergyType = apiDto.EnergyType ?? "",
@@ -475,8 +481,8 @@ public class PokemonCardApiService : IPokemonCardApiService
                     VariantReverse = apiDto.Variants?.Reverse ?? false,
                     VariantHolo = apiDto.Variants?.Holo ?? false,
                     VariantFirstEdition = apiDto.Variants?.FirstEdition ?? false,
-                    TcgPlayerPrice = apiDto.Pricing?.Tcgplayer?.Normal?.MarketPrice,
-                    CardmarketPrice = apiDto.Pricing?.Cardmarket?.Avg,
+                    TcgPlayerPrice = tcgPrice,
+                    CardmarketPrice = cardmarketPrice,
                     Updated = apiDto.Updated ?? DateTime.UtcNow,
                     DateAdded = DateTime.UtcNow,
                 }
